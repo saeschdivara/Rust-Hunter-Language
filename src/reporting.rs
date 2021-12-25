@@ -10,12 +10,12 @@ impl CodeReporter {
         CodeReporter { has_error: false }
     }
 
-    pub fn report_error(&mut self, file: String, line: i64, message: String) {
+    pub fn report_error(&mut self, file: &String, line: usize, message: &String) {
         self.has_error = true;
         self.report(file, line, message);
     }
 
-    fn report(&self, file: String, line: i64, message: String) {
+    fn report(&self, file: &String, line: usize, message: &String) {
         warn!("[{}:{}]: {}", file, line, message);
     }
 }
