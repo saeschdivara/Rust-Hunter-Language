@@ -22,6 +22,7 @@ pub enum TokenType {
     IF, ELSE, WHILE,
     CONST, FUNCTION,
     PRINT,
+    TRUE, FALSE,
 
     EOF,
 }
@@ -69,6 +70,8 @@ impl Debug for Token {
                 format_value = format!("Float (\"{}\")", &self.lexeme);
                 format_value.as_str()
             },
+            TokenType::TRUE => "boolean: true",
+            TokenType::FALSE => "boolean: false",
             TokenType::CONST => "keyword: const",
             TokenType::FUNCTION => "keyword: fun",
             TokenType::PRINT => "keyword: print",
@@ -204,6 +207,8 @@ impl Scanner {
             "if"    => TokenType::IF,
             "else"  => TokenType::ELSE,
             "while" => TokenType::WHILE,
+            "true"  => TokenType::TRUE,
+            "false" => TokenType::FALSE,
             _ => TokenType::IDENTIFIER
         }
     }
