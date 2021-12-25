@@ -109,7 +109,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "simple_hunter_language"
+name = "rust_hunter_language"
 version = "0.1.0"
 dependencies = [
  "chrono",
