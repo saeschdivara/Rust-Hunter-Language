@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Formatter};
-use log::info;
 use crate::reporting::CodeReporter;
 
 #[derive(PartialEq)]
@@ -20,6 +19,7 @@ pub enum TokenType {
     IDENTIFIER, STRING, INT, FLOAT,
 
     // Keywords.
+    IF, ELSE, WHILE,
     CONST, FUNCTION,
     PRINT,
 
@@ -40,15 +40,15 @@ impl Token {
 
 impl Debug for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let mut format_value: String;
+        let format_value: String;
         let output= match self.token_type {
             TokenType::INVALID => "Invalid token",
             TokenType::COMMA => ",",
             TokenType::DOT => ".",
             TokenType::LeftParen => "(",
             TokenType::RightParen => ")",
-            TokenType::MINUS => "",
-            TokenType::PLUS => "",
+            TokenType::MINUS => "-",
+            TokenType::PLUS => "+",
             TokenType::EQUAL => "=",
             TokenType::BANG => "!",
             TokenType::BangEqual => "!=",
@@ -61,15 +61,21 @@ impl Debug for Token {
                 format_value = format!("String (\"{}\")", &self.lexeme);
                 format_value.as_str()
             },
-            TokenType::INT => "",
-            TokenType::FLOAT => "",
+            TokenType::INT => {
+                format_value = format!("Int (\"{}\")", &self.lexeme);
+                format_value.as_str()
+            },
+            TokenType::FLOAT => {
+                format_value = format!("Float (\"{}\")", &self.lexeme);
+                format_value.as_str()
+            },
             TokenType::CONST => "keyword: const",
             TokenType::FUNCTION => "keyword: fun",
             TokenType::PRINT => "keyword: print",
             TokenType::SpaceLevel => ">",
             TokenType::SPACE => "<SPACE>",
-            TokenType::EOF => "",
-            _ => "",
+            TokenType::EOF => "<EOF>",
+            _ => "<missing string>",
         };
 
         f.write_str(output)
@@ -123,6 +129,8 @@ impl Scanner {
 
         }
 
+        tokens.push(self.create_token(TokenType::EOF));
+
         return tokens;
     }
 
@@ -139,6 +147,8 @@ impl Scanner {
             ')' => TokenType::RightParen,
             ',' => TokenType::COMMA,
             '.' => TokenType::DOT,
+            '+' => TokenType::PLUS,
+            '-' => TokenType::MINUS,
             '!' => if self.matches_character('=') { TokenType::BangEqual } else { TokenType::BANG },
             '=' => if self.matches_character('=') { TokenType::EqualEqual } else { TokenType::EQUAL },
             '#' => { while self.peek() != '\n' { self.advance(); } TokenType::COMMENT },
@@ -151,7 +161,9 @@ impl Scanner {
             '"' => self.scan_string_token(),
             _   => {
 
-                if character.is_alphabetic() {
+                if character.is_numeric() {
+                    self.scan_number()
+                } else if character.is_alphabetic() {
                     self.scan_identifier()
                 } else {
                     TokenType::INVALID
@@ -163,6 +175,21 @@ impl Scanner {
         return self.create_token(token_type)
     }
 
+    fn scan_number(&mut self) -> TokenType {
+        let mut token_type = TokenType::INT;
+
+        while self.peek().is_numeric() || (self.peek() == '.' && self.double_peek().is_numeric()) {
+
+            if self.peek() == '.' {
+                token_type = TokenType::FLOAT;
+            }
+
+            self.advance();
+        }
+
+        return token_type
+    }
+
     fn scan_identifier(&mut self) -> TokenType {
         while self.peek().is_alphanumeric() {
             self.advance();
@@ -172,8 +199,11 @@ impl Scanner {
 
         match token_str.as_str() {
             "const" => TokenType::CONST,
-            "fun" => TokenType::FUNCTION,
+            "fun"   => TokenType::FUNCTION,
             "print" => TokenType::PRINT,
+            "if"    => TokenType::IF,
+            "else"  => TokenType::ELSE,
+            "while" => TokenType::WHILE,
             _ => TokenType::IDENTIFIER
         }
     }
@@ -224,7 +254,12 @@ impl Scanner {
 
     fn peek(&mut self) -> char {
         if self.is_at_end() { return '\0' }
-        return self.source.chars().nth(self.current as usize).unwrap();
+        return self.source.chars().nth(self.current).unwrap();
+    }
+
+    fn double_peek(&mut self) -> char {
+        if self.is_at_end() { return '\0' }
+        return self.source.chars().nth(self.current+1).unwrap();
     }
 
     fn look_back(&mut self) -> char {

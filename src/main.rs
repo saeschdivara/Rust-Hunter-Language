@@ -3,15 +3,10 @@ mod interpreter;
 mod reporting;
 
 use std::{env, fs};
-use std::fs::File;
-use std::io::{BufRead, BufReader};
 use chrono::Local;
 use fern::colors::{Color, ColoredLevelConfig};
 use log::info;
 
-
-#[macro_use]
-extern crate lazy_static;
 use crate::interpreter::run;
 
 fn setup_logger() -> Result<(), fern::InitError> {
