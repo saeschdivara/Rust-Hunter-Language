@@ -1,6 +1,7 @@
-mod scanning;
+mod scanner;
 mod interpreter;
-mod reporting;
+mod reporter;
+mod parser;
 
 use std::{env, fs};
 use chrono::Local;

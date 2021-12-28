@@ -1,5 +1,6 @@
 use log::warn;
 
+#[derive(Clone, Copy)]
 pub struct CodeReporter {
     has_error: bool
 }

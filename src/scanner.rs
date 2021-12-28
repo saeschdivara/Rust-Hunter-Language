@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
-use crate::reporting::CodeReporter;
+use crate::reporter::CodeReporter;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum TokenType {
     INVALID,
 
@@ -28,14 +28,15 @@ pub enum TokenType {
 }
 
 pub struct Token {
-    token_type: TokenType,
-    lexeme: String,
-    line: usize,
+    pub token_type: TokenType,
+    pub lexeme: String,
+    pub file_name: String,
+    pub line: usize,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: String, line: usize) -> Self {
-        Token { token_type, lexeme, line }
+    pub fn new(token_type: TokenType, lexeme: String, file_name: String, line: usize) -> Self {
+        Token { token_type, lexeme, file_name, line }
     }
 }
 
@@ -244,7 +245,12 @@ impl Scanner {
             range_ending = range_ending - 1;
         }
 
-        Token::new(token_type,self.source[range_beginning..range_ending].to_string(), self.line)
+        Token::new(
+            token_type,
+            self.source[range_beginning..range_ending].to_string(),
+            self.file_name.clone(),
+            self.line
+        )
     }
 
     fn get_current_token_string(&self) -> String {
