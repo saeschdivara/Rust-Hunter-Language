@@ -127,7 +127,7 @@ impl Scanner {
             match token.token_type {
                 TokenType::COMMENT => {}
                 TokenType::SPACE => {}
-                TokenType::LineBreak => { self.line += 1; }
+                TokenType::LineBreak => { self.line += 1; tokens.push(token); }
                 _ => tokens.push(token)
             }
 

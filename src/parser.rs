@@ -24,43 +24,24 @@ pub struct StringExpr {
     value: String,
 }
 
-// pub trait ExpressionVisitor {
-//     fn accept_empty(&self, expr: &EmptyExpr);
-//     fn accept_const(&self, expr: &ConstExpr);
-//     fn accept_func(&self, expr: &FunctionExpr);
-// }
-
 pub trait Expression {
-    // fn accept(&self, visitor: &dyn ExpressionVisitor);
     fn dump(&self) -> String;
 }
 
 impl Expression for EmptyExpr {
-    // fn accept(&self, visitor: &dyn ExpressionVisitor) {
-    //     visitor.accept_empty(self)
-    // }
-
     fn dump(&self) -> String {
         String::from("<empty>")
     }
 }
 
 impl Expression for ConstExpr {
-    // fn accept(&self, visitor: &dyn ExpressionVisitor) {
-    //     visitor.accept_const(self)
-    // }
-
     fn dump(&self) -> String {
-        String::from("<empty>")
+        String::from(format!("<Const> {} = {}", &self.variable, &self.value.dump()))
     }
 }
 
 impl Expression for FunctionExpr {
-    // fn accept(&self, visitor: &dyn ExpressionVisitor) {
-    //     visitor.accept_func(self)
-    // }
-
-    fn dump(&self) -> String {
+        fn dump(&self) -> String {
         let mut parameters_output = String::from("");
 
         for body_expr in &self.body {
@@ -122,6 +103,10 @@ impl Parser {
             let token = self.advance();
             let expr = self.parse_expr(&token);
 
+            if token.token_type == TokenType::LineBreak {
+                continue
+            }
+
             match expr {
                 Ok(..) => ast.expressions.push(expr.unwrap()),
                 Err(..) => {
@@ -140,6 +125,8 @@ impl Parser {
     fn parse_expr(&mut self, token: &Token) -> Result<Box<dyn Expression>, &str> {
         if token.token_type == TokenType::FUNCTION {
             self.parse_function()
+        } else if token.token_type == TokenType::CONST {
+            self.parse_const()
         } else if token.token_type == TokenType::PRINT {
             self.parse_print()
         } else if token.token_type == TokenType::STRING {
@@ -171,6 +158,27 @@ impl Parser {
         Ok(Box::new(PrintExpr { values: values }))
     }
 
+    fn parse_const(&mut self) -> Result<Box<dyn Expression>, &str> {
+        let identifier_token = self.advance();
+        if identifier_token.token_type != TokenType::IDENTIFIER {
+            return Err("Missing identifier after function keyword");
+        }
+
+        let equal_token = self.advance();
+        if equal_token.token_type != TokenType::EQUAL {
+            return Err("Missing equal after identifier");
+        }
+
+        let token = self.advance();
+        let value = self.parse_expr(&token);
+
+        if value.is_err() {
+            return Err(value.err().unwrap())
+        }
+
+        Ok(Box::new(ConstExpr{ variable: identifier_token.lexeme, value: value.unwrap() }))
+    }
+
     fn parse_string(&mut self, token: &Token) -> Result<Box<dyn Expression>, &str> {
         Ok(Box::new(StringExpr{ value: token.lexeme.to_string() }))
     }
@@ -191,6 +199,9 @@ impl Parser {
         if right_paren_token.token_type != TokenType::RightParen {
             return Err("Missing right paren after after all params");
         }
+
+        // ignore line break
+        self.advance();
 
         let level1 = self.advance();
         if level1.token_type != TokenType::SpaceLevel {
@@ -213,6 +224,8 @@ impl Parser {
 
         if is_body_parsing {
             body_expr_list.push(body_expr.unwrap());
+            // ignore line breaks
+            self.advance();
         }
 
         while is_body_parsing && !self.is_at_end() {
@@ -224,6 +237,8 @@ impl Parser {
 
             if is_body_parsing {
                 body_expr_list.push(body_expr.unwrap());
+                // ignore line break
+                self.advance();
             }
         }
 
