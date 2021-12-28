@@ -61,19 +61,31 @@ impl Expression for FunctionExpr {
     // }
 
     fn dump(&self) -> String {
-        String::from(format!("<Func> {}", self.name))
+        let mut parameters_output = String::from("");
+
+        for body_expr in &self.body {
+            parameters_output += &*String::from(format!("<Body-Expr> {}\n", body_expr.dump()));
+        }
+
+        String::from(format!("<Func> {}\n{}", self.name, parameters_output))
     }
 }
 
 impl Expression for StringExpr {
     fn dump(&self) -> String {
-        String::from(format!("<String> {}", self.value))
+        String::from(format!("<String> \"{}\"", self.value))
     }
 }
 
 impl Expression for PrintExpr {
     fn dump(&self) -> String {
-        String::from(format!("<Print>"))
+        let mut parameters_output = String::from("");
+
+        for value_expr in &self.values {
+            parameters_output += &*String::from(format!("{}, ", value_expr.dump()));
+        }
+
+        String::from(format!("<Print> {}", parameters_output))
     }
 }
 
@@ -143,12 +155,20 @@ impl Parser {
             return Err("Missing left paren after function name");
         }
 
-        let right_paren_token = self.advance();
-        if right_paren_token.token_type != TokenType::RightParen {
-            return Err("Missing right paren after after all params");
+        let mut values: Vec<Box<dyn Expression>> = vec![];
+        let mut current_token = self.advance();
+        while current_token.token_type != TokenType::RightParen && !self.is_at_end() {
+            let expr_result = self.parse_expr(&current_token);
+            if expr_result.is_ok() {
+                values.push(expr_result.unwrap());
+                current_token = self.advance();
+            } else {
+                break;
+            }
+
         }
 
-        Ok(Box::new(EmptyExpr{}))
+        Ok(Box::new(PrintExpr { values: values }))
     }
 
     fn parse_string(&mut self, token: &Token) -> Result<Box<dyn Expression>, &str> {
@@ -191,7 +211,11 @@ impl Parser {
         let body_expr = self.parse_expr(&next_token);
         let mut is_body_parsing = body_expr.is_ok();
 
-        while is_body_parsing {
+        if is_body_parsing {
+            body_expr_list.push(body_expr.unwrap());
+        }
+
+        while is_body_parsing && !self.is_at_end() {
             for i in 0..level_number {
                 next_token = self.advance();
             }
@@ -213,7 +237,8 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        return self.current_token_index >= self.tokens.len();
+        if self.current_token_index >= self.tokens.len() { return true }
+        else { self.peek().token_type == TokenType::EOF }
     }
 
     fn advance(&mut self) -> Token {
