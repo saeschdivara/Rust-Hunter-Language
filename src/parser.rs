@@ -24,6 +24,10 @@ pub struct StringExpr {
     value: String,
 }
 
+pub struct VariableExpr {
+    name: String,
+}
+
 pub struct IntExpr {
     value: i64,
 }
@@ -65,6 +69,12 @@ impl Expression for StringExpr {
 impl Expression for IntExpr {
     fn dump(&self) -> String {
         String::from(format!("<Int> \"{}\"", self.value))
+    }
+}
+
+impl Expression for VariableExpr {
+    fn dump(&self) -> String {
+        String::from(format!("<Variable> \"{}\"", self.name))
     }
 }
 
@@ -143,6 +153,8 @@ impl Parser {
             self.parse_string(token)
         } else if token.token_type == TokenType::INT {
             self.parse_int(token)
+        } else if token.token_type == TokenType::IDENTIFIER {
+            self.parse_variable(token)
         } else {
             Err("Could not parse an expression")
         }
@@ -161,6 +173,12 @@ impl Parser {
             if expr_result.is_ok() {
                 values.push(expr_result.unwrap());
                 current_token = self.advance();
+
+                if current_token.token_type != TokenType::COMMA && current_token.token_type != TokenType::RightParen {
+                    return Err("Comma missing after parameter")
+                } else if current_token.token_type == TokenType::COMMA {
+                    current_token = self.advance();
+                }
             } else {
                 break;
             }
@@ -197,6 +215,10 @@ impl Parser {
 
     fn parse_int(&mut self, token: &Token) -> Result<Box<dyn Expression>, &str> {
         Ok(Box::new(IntExpr{ value: token.lexeme.to_string().parse().unwrap() }))
+    }
+
+    fn parse_variable(&mut self, token: &Token) -> Result<Box<dyn Expression>, &str> {
+        Ok(Box::new(VariableExpr{ name: token.lexeme.to_string() }))
     }
 
     fn parse_function(&mut self) -> Result<Box<dyn Expression>, &str> {
