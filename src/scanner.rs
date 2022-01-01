@@ -78,6 +78,7 @@ impl Debug for Token {
             TokenType::PRINT => "keyword: print",
             TokenType::SpaceLevel => ">",
             TokenType::SPACE => "<SPACE>",
+            TokenType::LineBreak => "<BR>",
             TokenType::EOF => "<EOF>",
             _ => "<missing string>",
         };

@@ -191,7 +191,7 @@ impl Parser {
     fn parse_const(&mut self) -> Result<Box<dyn Expression>, &str> {
         let identifier_token = self.advance();
         if identifier_token.token_type != TokenType::IDENTIFIER {
-            return Err("Missing identifier after function keyword");
+            return Err("Missing identifier after const keyword");
         }
 
         let equal_token = self.advance();
@@ -247,7 +247,7 @@ impl Parser {
         }
 
         let mut level_number = 1;
-        let mut next_token = self.peek();
+        let mut next_token = self.advance();
 
         while next_token.token_type == TokenType::SpaceLevel {
             level_number += 1;
@@ -267,9 +267,12 @@ impl Parser {
         }
 
         while is_body_parsing && !self.is_at_end() {
-            for i in 0..level_number {
+            for _ in 0..level_number {
                 next_token = self.advance();
             }
+
+            next_token = self.advance();
+
             let body_expr = self.parse_expr(&next_token);
             is_body_parsing = body_expr.is_ok();
 
@@ -277,6 +280,10 @@ impl Parser {
                 body_expr_list.push(body_expr.unwrap());
                 // ignore line break
                 self.advance();
+
+                while !self.is_at_end() && self.peek().token_type == TokenType::LineBreak {
+                    self.advance();
+                }
             }
         }
 
