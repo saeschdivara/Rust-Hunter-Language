@@ -24,6 +24,10 @@ pub struct StringExpr {
     value: String,
 }
 
+pub struct IntExpr {
+    value: i64,
+}
+
 pub trait Expression {
     fn dump(&self) -> String;
 }
@@ -55,6 +59,12 @@ impl Expression for FunctionExpr {
 impl Expression for StringExpr {
     fn dump(&self) -> String {
         String::from(format!("<String> \"{}\"", self.value))
+    }
+}
+
+impl Expression for IntExpr {
+    fn dump(&self) -> String {
+        String::from(format!("<Int> \"{}\"", self.value))
     }
 }
 
@@ -131,6 +141,8 @@ impl Parser {
             self.parse_print()
         } else if token.token_type == TokenType::STRING {
             self.parse_string(token)
+        } else if token.token_type == TokenType::INT {
+            self.parse_int(token)
         } else {
             Err("Could not parse an expression")
         }
@@ -181,6 +193,10 @@ impl Parser {
 
     fn parse_string(&mut self, token: &Token) -> Result<Box<dyn Expression>, &str> {
         Ok(Box::new(StringExpr{ value: token.lexeme.to_string() }))
+    }
+
+    fn parse_int(&mut self, token: &Token) -> Result<Box<dyn Expression>, &str> {
+        Ok(Box::new(IntExpr{ value: token.lexeme.to_string().parse().unwrap() }))
     }
 
     fn parse_function(&mut self) -> Result<Box<dyn Expression>, &str> {
