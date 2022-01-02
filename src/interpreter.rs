@@ -1,8 +1,9 @@
 use chrono::Local;
 use log::info;
+
 use crate::parser::Parser;
 use crate::reporter::CodeReporter;
-
+use crate::runtime::{InterpreterRuntime, RuntimeEngine};
 use crate::scanner::Scanner;
 
 pub fn run(file_name: String, source: String) {
@@ -28,4 +29,7 @@ pub fn run(file_name: String, source: String) {
     info!("Parsing took {} ms", (end_parser - start_parser).num_milliseconds());
 
     ast.dump();
+
+    let runtime = InterpreterRuntime::new();
+    runtime.execute_ast(&ast);
 }

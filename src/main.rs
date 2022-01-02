@@ -2,6 +2,8 @@ mod scanner;
 mod interpreter;
 mod reporter;
 mod parser;
+mod runtime;
+mod expressions;
 
 use std::{env, fs};
 use chrono::Local;
